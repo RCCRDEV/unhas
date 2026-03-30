@@ -86,25 +86,25 @@ export default function Home() {
   const demoBarbers: DemoBarber[] = useMemo(
     () => [
       {
-        id: 'demo-livia',
+        id: 'prof-1',
         name: 'Lívia',
-        calendarId: 'demo-livia',
+        calendarId: 'prof-1',
         avatar: 'L',
         photoUrl:
           'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=1600&q=80',
       },
       {
-        id: 'demo-bruna',
+        id: 'prof-2',
         name: 'Bruna',
-        calendarId: 'demo-bruna',
+        calendarId: 'prof-2',
         avatar: 'B',
         photoUrl:
           'https://images.unsplash.com/photo-1520975693419-b3a4c1f2f7c1?auto=format&fit=crop&w=1600&q=80',
       },
       {
-        id: 'demo-camila',
+        id: 'prof-3',
         name: 'Camila',
-        calendarId: 'demo-camila',
+        calendarId: 'prof-3',
         avatar: 'C',
         photoUrl:
           'https://images.unsplash.com/photo-1522336572468-97b06e8ef143?auto=format&fit=crop&w=1600&q=80',

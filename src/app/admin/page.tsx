@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { barbers, Barber } from '@/config';
 
+const DEMO_STORAGE_KEY = 'nailstudio_demo_bookings_v1';
+
 export default function AdminPage() {
   const [selectedBarber, setSelectedBarber] = useState<Barber | null>(null);
   const [date, setDate] = useState('');
@@ -11,15 +13,48 @@ export default function AdminPage() {
   const [endTime, setEndTime] = useState('10:00');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [message, setMessage] = useState<string | null>(null);
+
+  const blockLocally = (barberId: string, startDateTime: Date, endDateTime: Date) => {
+    const stepMinutes = 30;
+    const slots: string[] = [];
+    const cursor = new Date(startDateTime);
+    while (cursor.getTime() < endDateTime.getTime()) {
+      slots.push(cursor.toISOString());
+      cursor.setTime(cursor.getTime() + stepMinutes * 60_000);
+    }
+
+    try {
+      const raw = localStorage.getItem(DEMO_STORAGE_KEY);
+      const parsed = raw ? (JSON.parse(raw) as unknown) : null;
+      const next: Record<string, string[]> = typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, string[]>) : {};
+      const existing = Array.isArray(next[barberId]) ? next[barberId] : [];
+      const merged = new Set<string>(existing);
+      for (const slot of slots) merged.add(slot);
+      next[barberId] = Array.from(merged).sort();
+      localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(next));
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
   const handleBlockTime = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBarber || !date || !startTime || !endTime || !password) return;
 
     setStatus('loading');
+    setMessage(null);
     try {
       const startDateTime = new Date(`${date}T${startTime}:00`);
       const endDateTime = new Date(`${date}T${endTime}:00`);
+
+      const defaultPassword = 'unhas';
+      if (password !== defaultPassword) {
+        setStatus('error');
+        setMessage('Senha inválida');
+        return;
+      }
 
       const response = await fetch('/api/book', {
         method: 'POST',
@@ -36,12 +71,40 @@ export default function AdminPage() {
 
       if (response.ok) {
         setStatus('success');
+        setMessage('Horário bloqueado!');
         setTimeout(() => setStatus('idle'), 3000);
       } else {
+        let errorText = 'Erro ao bloquear';
+        try {
+          const payload = (await response.json()) as unknown;
+          if (typeof payload === 'object' && payload !== null && 'error' in payload && typeof payload.error === 'string') {
+            errorText = payload.error;
+          }
+        } catch {}
+
+        const fallbackOk = blockLocally(selectedBarber.id, startDateTime, endDateTime);
+        if (fallbackOk) {
+          setStatus('success');
+          setMessage('Horário bloqueado! (modo demo)');
+          setTimeout(() => setStatus('idle'), 3000);
+          return;
+        }
+
         setStatus('error');
+        setMessage(errorText);
       }
     } catch {
+      const startDateTime = new Date(`${date}T${startTime}:00`);
+      const endDateTime = new Date(`${date}T${endTime}:00`);
+      const fallbackOk = blockLocally(selectedBarber.id, startDateTime, endDateTime);
+      if (fallbackOk) {
+        setStatus('success');
+        setMessage('Horário bloqueado! (modo demo)');
+        setTimeout(() => setStatus('idle'), 3000);
+        return;
+      }
       setStatus('error');
+      setMessage('Erro ao bloquear');
     }
   };
 
@@ -130,10 +193,10 @@ export default function AdminPage() {
             {status === 'loading' ? 'Bloqueando...' : 'Marcar Indisponível'}
           </button>
 
-          {status === 'success' && <p className="text-green-600 dark:text-green-400 text-center font-bold">Horário bloqueado!</p>}
-          {status === 'error' && (
-            <p className="text-red-600 dark:text-red-400 text-center font-bold">Erro ao bloquear. Verifique a senha.</p>
+          {status === 'success' && (
+            <p className="text-green-600 dark:text-green-400 text-center font-bold">{message || 'Horário bloqueado!'}</p>
           )}
+          {status === 'error' && <p className="text-red-600 dark:text-red-400 text-center font-bold">{message || 'Erro ao bloquear'}</p>}
         </form>
 
         <div className="mt-8 text-center">
