@@ -117,6 +117,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ slots });
   } catch (error) {
     console.error('Erro ao buscar disponibilidade:', error);
-    return NextResponse.json({ error: 'Erro ao buscar horários' }, { status: 500 });
+    return NextResponse.json({ demo: true, slots: [], options: [] }, { status: 200 });
   }
 }

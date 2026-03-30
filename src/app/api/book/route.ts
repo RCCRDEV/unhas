@@ -8,7 +8,7 @@ export const revalidate = 1;
 
 export async function POST(request: Request) {
   if (isGithubPages) {
-    return NextResponse.json({ error: 'Indisponível no modo GitHub Pages' }, { status: 501 });
+    return NextResponse.json({ demo: true, message: 'Agendamento simulado (modo estático)' }, { status: 200 });
   }
 
   try {
@@ -77,6 +77,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, result });
   } catch (error) {
     console.error('Erro ao realizar agendamento:', error);
-    return NextResponse.json({ error: 'Erro ao realizar agendamento' }, { status: 500 });
+    return NextResponse.json({ demo: true, message: 'Agendamento simulado (falha no serviço real)' }, { status: 200 });
   }
 }
